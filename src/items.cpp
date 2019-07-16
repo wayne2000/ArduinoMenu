@@ -154,7 +154,8 @@ void textField::doNav(navNode& nav,navCmd cmd) {
     case upCmd:
       if (charEdit) {
         const char* v=validator(cursor);
-        char *at=strchr(v,buffer()[cursor]);
+        //wei, only for keil cpp11
+        char *at=(char *)strchr(v,buffer()[cursor]);
         idx_t pos=at?at-v+1:1;
         if (pos>=(idx_t)strlen(v)) pos=0;
         buffer()[cursor]=v[pos];
@@ -169,7 +170,8 @@ void textField::doNav(navNode& nav,navCmd cmd) {
     case downCmd:
       if (charEdit) {
         const char* v=validator(cursor);
-        char *at=strchr(v,buffer()[cursor]);//at is not stored on the class to save memory
+        //wei, only for keil cpp11
+        char *at=(char *)strchr(v,buffer()[cursor]);//at is not stored on the class to save memory
         idx_t pos=at?at-v-1:0;
         if (pos<0) pos=strlen(v)-1;
         buffer()[cursor]=v[pos];
@@ -307,7 +309,8 @@ void textField::parseInput(navNode& nav,menuIn& in) {
         return;
       default: {
         const char* v=validator(cursor);
-        char *at=strchr(v,c);
+        //wei, only for keil cpp11
+        char *at=(char *)strchr(v,c);
         if (at) {
           in.read();
           buffer()[cursor]=c;
@@ -460,7 +463,8 @@ idx_t menuVariantBase::togglePrintTo(navRoot &root,bool sel,menuOut& out, idx_t 
     l+=operator[](at).printRaw(out,len-l);
     #ifdef MENU_FMT_WRAPS
   out.fmtEnd(*this,menuOut::fmtToggle,root.node(),idx);
-    #endif-
+    //wei, only for keil cpp11
+    #endif
   }
   return l;
 }
