@@ -44,6 +44,9 @@
         inline prompt(constMEM promptShadow& shadow):shadow(&shadow) {}
         inline prompt(constText* t,action a=doNothing,eventMask e=noEvent,styles s=noStyle,systemStyles ss=_noStyle)
           :shadow(new promptShadow(t,a,e,s,ss)) {}
+        inline prompt(constText** pt,action a=doNothing,eventMask e=noEvent,styles s=noStyle,systemStyles ss=_noStyle,idx_t lang=0)
+          :shadow(new promptShadow(pt,a,e,s,ss,lang)) {}
+        inline void chLang(idx_t l) { shadow->chLang(l); dirty=true; }
         inline void enable() {enabled=enabledStatus;}
         inline void disable() {enabled=disabledStatus;}
         inline constText* getText() const {return shadow->getText();}
@@ -110,6 +113,8 @@
         inline navTarget(constMEM promptShadow& shadow):prompt(shadow) {}
         inline navTarget(constText* t,action a=doNothing,eventMask e=noEvent,styles s=noStyle,systemStyles ss=_noStyle)
           :prompt(t,a,e,s,ss) {}
+        inline navTarget(constText** pt,action a=doNothing,eventMask e=noEvent,styles s=noStyle,systemStyles ss=_noStyle,idx_t lang=0)
+          :prompt(pt,a,e,s,ss,lang) {}
         virtual void parseInput(navNode& nav,menuIn& in);
         virtual void doNav(navNode& nav,navCmd cmd);
         #ifdef MENU_ASYNC
@@ -135,6 +140,17 @@
         styles style=noStyle,
         systemStyles ss=(Menu::systemStyles)(_noStyle|_canNav|_parentDraw)
       ):navTarget(*new textFieldShadow(label,b,sz,v,a,e,style,ss)) {}
+      inline textField(
+        constText** plabel,
+        char* b,
+        idx_t sz,
+        char* const* v,
+        action a=doNothing,
+        eventMask e=noEvent,
+        styles style=noStyle,
+        systemStyles ss=(Menu::systemStyles)(_noStyle|_canNav|_parentDraw),
+        idx_t lang=0
+      ):navTarget(*new textFieldShadow(plabel,b,sz,v,a,e,style,ss,lang)) {}
       inline char* buffer() const {return ((textFieldShadow*)shadow)->_buffer();}
       inline idx_t sz() const {return ((textFieldShadow*)shadow)->_sz();}
       constText* validator(int i);
@@ -191,6 +207,19 @@
           eventMask e=noEvent,
           styles s=noStyle
         ):menuField(*new menuFieldShadow<T>(value,text,units,low,high,step,tune,a,e,s)) {}
+        menuField(
+          T &value,
+          constText** ptext,
+          constText*units,
+          T low,
+          T high,
+          T step,
+          T tune,
+          action a=doNothing,
+          eventMask e=noEvent,
+          styles s=noStyle,
+          idx_t lang=0
+        ):menuField(*new menuFieldShadow<T>(value,ptext,units,low,high,step,tune,a,e,s,lang)) {}
         bool canTune() override;
         void constrainField() override;
         idx_t printReflex(menuOut& o) const override;
@@ -222,6 +251,8 @@
         inline menuValue(constMEM menuValueShadow<T>& shadow):prompt(shadow) {}
         inline menuValue(constText* text,T value,action a=doNothing,eventMask e=noEvent)
           :menuValue(*new menuValueShadow<T>(text,value,a,e)) {}
+        inline menuValue(constText** ptext,T value,action a=doNothing,eventMask e=noEvent,idx_t lang=0)
+          :menuValue(*new menuValueShadow<T>(ptext,value,a,e,lang)) {}
         inline T target() const {return ((menuValueShadow<T>*)shadow)->target();}
         #ifdef MENU_FMT_WRAPS
           virtual classes type() const {return valueClass;}
@@ -238,6 +269,8 @@
         inline menuNode(constMEM menuNodeShadow& s):navTarget(s) {}
         inline menuNode(constText* text,idx_t sz,prompt* constMEM data[],action a=noAction,eventMask e=noEvent,styles style=wrapStyle,systemStyles ss=(systemStyles)(_menuData|_canNav))
           :navTarget(*new menuNodeShadow(text,sz,data,a,e,style,ss)) {}
+        inline menuNode(constText** ptext,idx_t sz,prompt* constMEM data[],action a=noAction,eventMask e=noEvent,styles style=wrapStyle,systemStyles ss=(systemStyles)(_menuData|_canNav),idx_t lang=0)
+          :navTarget(*new menuNodeShadow(ptext,sz,data,a,e,style,ss,lang)) {}
         #ifdef MENU_FMT_WRAPS
           virtual classes type() const;
         #endif
@@ -268,6 +301,7 @@
         #endif
         template<bool clear>
         bool _changes(const navNode &nav,const menuOut& out,bool sub,bool test);
+        void chLang(idx_t lang);
     };
 
     //--------------------------------------------------------------------------
@@ -301,6 +335,8 @@
         inline menuVariant(constMEM menuNodeShadow& s):menuVariantBase(s) {}
         inline menuVariant(constText* text,T &target,idx_t sz,prompt* constMEM* data,action a,eventMask e,styles style)
           :menuVariantBase(*new menuVariantShadow<T>(text,target,sz,data,a,e,style)) {}
+        inline menuVariant(constText** ptext,T &target,idx_t sz,prompt* constMEM* data,action a,eventMask e,styles style,idx_t lang=0)
+          :menuVariantBase(*new menuVariantShadow<T>(ptext,target,sz,data,a,e,style,lang)) {}
         idx_t sync() override;
         idx_t sync(idx_t i) override;
         inline T& target() const {return ((menuVariantShadow<T>*)shadow)->target();}
@@ -325,6 +361,17 @@
           styles style=noStyle,
           systemStyles ss=((systemStyles)(Menu::_menuData|Menu::_canNav|Menu::_isVariant|Menu::_parentDraw))
         ):menuVariant<T>(*new menuVariantShadow<T>(text,target,sz,data,a,e,style,ss)) {}
+        inline select(
+          constText** ptext,
+          T &target,
+          idx_t sz,
+          prompt* constMEM* data,
+          action a=doNothing,
+          eventMask e=noEvent,
+          styles style=noStyle,
+          systemStyles ss=((systemStyles)(Menu::_menuData|Menu::_canNav|Menu::_isVariant|Menu::_parentDraw)),
+          idx_t lang=0
+        ):menuVariant<T>(*new menuVariantShadow<T>(ptext,target,sz,data,a,e,style,ss,lang)) {}
         #ifdef MENU_FMT_WRAPS
           virtual classes type() const {return selectClass;}
         #endif
@@ -347,6 +394,17 @@
           styles style=noStyle,
           systemStyles ss=((systemStyles)(Menu::_menuData|Menu::_isVariant))
         ):menuVariant<T>(*new menuVariantShadow<T>(text,target,sz,data,a,e,style,ss)) {}
+        inline toggle(
+          constText** ptext,
+          T &target,
+          idx_t sz,
+          prompt* constMEM* data,
+          action a=doNothing,
+          eventMask e=noEvent,
+          styles style=noStyle,
+          systemStyles ss=((systemStyles)(Menu::_menuData|Menu::_isVariant)),
+          idx_t lang=0
+        ):menuVariant<T>(*new menuVariantShadow<T>(ptext,target,sz,data,a,e,style,ss,lang)) {}
         #ifdef MENU_FMT_WRAPS
           classes type() const override;
         #endif
@@ -372,6 +430,17 @@
           styles style=noStyle,
           systemStyles ss=((systemStyles)(Menu::_menuData|Menu::_canNav|Menu::_isVariant))
         ):menuVariant<T>(*new menuVariantShadow<T>(text,target,sz,data,a,e,style,ss)) {}
+        inline choose(
+          constText** ptext,
+          T &target,
+          idx_t sz,
+          prompt* constMEM* data,
+          action a=doNothing,
+          eventMask e=noEvent,
+          styles style=noStyle,
+          systemStyles ss=((systemStyles)(Menu::_menuData|Menu::_canNav|Menu::_isVariant)),
+          idx_t lang=0
+        ):menuVariant<T>(*new menuVariantShadow<T>(ptext,target,sz,data,a,e,style,ss,lang)) {}
         #ifdef MENU_FMT_WRAPS
           classes type() const override;
         #endif

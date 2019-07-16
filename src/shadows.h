@@ -19,11 +19,15 @@
       public:
         systemStyles sysStyles;
         constText*text;
+        constText **ptext=NULL; // multi-lang string array
         eventMask events;//registered events (mask)
         styles style;
       public:
         promptShadow(constText* t,action a=doNothing,eventMask e=noEvent,styles s=noStyle,systemStyles ss=_noStyle)
           :action(a),sysStyles(ss),text(t),events(e),style(s) {}
+        promptShadow(constText* pt[],action a=doNothing,eventMask e=noEvent,styles s=noStyle,systemStyles ss=_noStyle,idx_t lang=0)
+          :action(a),sysStyles(ss),ptext(pt),events(e),style(s) { text = pt[lang]; }
+        inline void chLang(idx_t l) { if(ptext) text = ptext[l]; }
         inline constText* getText() const {return (constText*)memPtr(text);}
         inline systemStyles _sysStyles() const {return (systemStyles)memEnum(&sysStyles);}
         inline eventMask _events() const {return (eventMask)memEnum(&events);}
@@ -55,6 +59,17 @@
           styles style=noStyle,
           systemStyles ss=(Menu::systemStyles)(_noStyle|_canNav|_parentDraw)
         ):promptShadow(label,a,e,style,ss),buffer(b),validators(v),sz(sz) {}
+        textFieldShadow(
+          constText** plabel,
+          char* b,
+          idx_t sz,
+          char* const* v,
+          action a=doNothing,
+          eventMask e=noEvent,
+          styles style=noStyle,
+          systemStyles ss=(Menu::systemStyles)(_noStyle|_canNav|_parentDraw),
+          idx_t lang=0
+        ):promptShadow(plabel,a,e,style,ss,lang),buffer(b),validators(v),sz(sz) {}
         idx_t _sz() const {return (idx_t)memIdx(sz);}
         char* _buffer() const {return (char*)memPtr(buffer);}
         char* const* _validators() const {return (char* const*)memPtr(validators);}
@@ -77,6 +92,8 @@
         idx_t sz;
         prompt* constMEM* data;
       public:
+        menuNodeShadow(constText** ptext,idx_t sz,prompt* constMEM* data,action a,eventMask e,styles style,systemStyles ss=(systemStyles)(_menuData|_canNav),idx_t lang=0)
+        :promptShadow(ptext,a,e,style,ss,lang),sz(sz),data(data) {}
         menuNodeShadow(constText* text,idx_t sz,prompt* constMEM* data,action a,eventMask e,styles style,systemStyles ss=(systemStyles)(_menuData|_canNav))
         :promptShadow(text,a,e,style,ss),sz(sz),data(data) {}
         idx_t _sz() const {return (idx_t)memIdx(sz);}
@@ -98,6 +115,8 @@
     class fieldBaseShadow:public promptShadow {
       public:
         constText* units;
+        fieldBaseShadow(constText** ptext,constText*units,action a=doNothing,eventMask e=noEvent,styles s=noStyle,systemStyles ss=((Menu::systemStyles)(Menu::_canNav|Menu::_parentDraw)),idx_t lang=0)
+          :promptShadow(ptext,a,e,s,ss,lang),units(units) {}
         fieldBaseShadow(constText* text,constText*units,action a=doNothing,eventMask e=noEvent,styles s=noStyle,systemStyles ss=((Menu::systemStyles)(Menu::_canNav|Menu::_parentDraw)))
           :promptShadow(text,a,e,s,ss),units(units) {}
         inline constText* _units() {return (constText*)memPtr(units);}
@@ -122,6 +141,8 @@
       public:
         menuFieldShadow(T &value,constText* text,constText*units,T low,T high,T step,T tune,action a=doNothing,eventMask e=noEvent,styles s=noStyle,systemStyles ss=((Menu::systemStyles)(Menu::_canNav|Menu::_parentDraw)))
           :fieldBaseShadow(text,units,a,e,s,ss),value(&value),low(low),high(high),step(step),tune(tune) {}
+        menuFieldShadow(T &value,constText** ptext,constText*units,T low,T high,T step,T tune,action a=doNothing,eventMask e=noEvent,styles s=noStyle,systemStyles ss=((Menu::systemStyles)(Menu::_canNav|Menu::_parentDraw)),idx_t lang=0)
+          :fieldBaseShadow(ptext,units,a,e,s,ss,lang),value(&value),low(low),high(high),step(step),tune(tune) {}
         inline T& target() const {return *(T*)memPtr(value);}
         inline T getTypeValue(const T* from) const {
           //TODO: dynamic versions require change of preprocessor to virtual
@@ -156,6 +177,8 @@
       public:
         inline menuValueShadow(constText* text,T value,action a=doNothing,eventMask e=noEvent)
           :promptShadow(text,a,e),value(value) {}
+        inline menuValueShadow(constText** ptext,T value,action a=doNothing,eventMask e=noEvent,idx_t lang=0)
+          :promptShadow(ptext,a,e,lang),value(value) {}
         inline T getTypeValue(const T* from) const {
           //TODO: dynamic versions require change of preprocessor to virtual
           #ifdef USING_PGM
@@ -196,6 +219,17 @@
           styles style,
           systemStyles ss=(systemStyles)(_menuData|_canNav)
         ):menuNodeShadow(text,sz,data,a,e,style,ss),value(&target) {}
+        menuVariantShadow(
+          constText** ptext,
+          T &target,
+          idx_t sz,
+          prompt* constMEM* data,
+          action a,
+          eventMask e,
+          styles style,
+          systemStyles ss=(systemStyles)(_menuData|_canNav),
+          idx_t lang=0
+        ):menuNodeShadow(ptext,sz,data,a,e,style,ss,lang),value(&target) {}
       inline T& target() const {return *((T*)memPtr(value));}
     };
   }//namespace Menu

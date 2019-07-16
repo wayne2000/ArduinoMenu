@@ -541,6 +541,21 @@ bool menuNode::_changes(const navNode &nav,const menuOut& out,bool sub,bool test
   } else return false;
 }
 
+/* change language string in menuNode and its childen */
+void menuNode::chLang(idx_t lang) {
+  prompt::chLang(lang); // for this node itself
+  for(int i=0;i<sz();i++) {
+    if (operator[](i).has((systemStyles)(_menuData|_canNav))) {
+      ((menuNode *)(&operator[](i)))->chLang(lang);
+    }
+    else
+    {
+      operator[](i).chLang(lang);
+    }
+    
+  }
+}
+
 #ifdef MENU_ASYNC
   const char* menu::typeName() const {return "menu";}
 #endif
